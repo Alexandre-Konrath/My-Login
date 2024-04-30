@@ -8,12 +8,27 @@ module.exports = {
     return res.json(user)
   },
 
+  // só sera visível no insomnia
   async store(req, res) {
-    const { name, email, password_hash } = req.body
+    const { name, email, password_hash } = req.body;
 
-    const user = await User.create({ name, email, password_hash })
+    try {
+      // Verifica se já existe um usuário com o email fornecido
+      const existingUser = await User.findOne({ where: { email } });
 
-    return res.json(user)
+      // Se já existir um usuário com esse email, retorna um erro
+      if (existingUser) {
+        return res.status(400).json({ error: 'Usuário já existe' });
+      }
+
+      // Se não existir, cria o novo usuário
+      const user = await User.create({ name, email, password_hash });
+
+      return res.json(user);
+    } catch (error) {
+      console.error('Erro ao criar usuário:', error);
+      return res.status(500).json({ error: 'Erro interno do servidor' });
+    }
   },
 
   async login(req, res) {
@@ -31,7 +46,7 @@ module.exports = {
       return res.status(401).json({ error: "Senha incorreta." });
     }
 
-    // Se chegou até aqui, a autenticação foi bem-sucedida
+    // autenticação foi bem-sucedida
     return res.json({ message: "Autenticação bem-sucedida." });
   },
 };
